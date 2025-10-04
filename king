@@ -1,0 +1,242 @@
+import java.util.*;
+import java.io.*;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
+/* ASA & ANDY - Superintelligent versions (upgraded for Android CONCEPTUALIZATION)
+
+NOTE: This code is still a standard Java class. The methods in AndroidController and AndroidTTS
+are PLACEHOLDERS. You MUST replace their bodies with actual Android SDK calls (Intents, TextToSpeech, etc.)
+when integrating this into an Android Studio project.
+*/
+
+// --- NEW CONCEPTUAL INTERFACES AND CLASSES FOR ANDROID ---
+
+/** Interface for Text-to-Speech (replace with Android's TextToSpeech) */
+interface TTSInterface {
+    void speak(String text);
+}
+
+/** Placeholder implementation for Android TextToSpeech */
+class AndroidTTS implements TTSInterface {
+    @Override
+    public void speak(String text) {
+        // --- TODO: REPLACE WITH ACTUAL ANDROID TTS CODE (e.g., using context) ---
+        // Example: android.speech.tts.TextToSpeech.speak(text, QUEUE_FLUSH, null, null);
+        System.out.println("[TTS Placeholder: " + text + "]");
+        // --------------------------------------------------------------------------
+    }
+}
+
+/** Conceptual class to handle Android system interactions (Intents) */
+class AndroidController {
+    // NOTE: This class would hold the Android 'Context' object in a real app.
+
+    public boolean makeCall(String number) {
+        // --- TODO: REPLACE WITH ACTUAL ANDROID INTENT FOR MAKING A CALL ---
+        // Example: Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + number));
+        // context.startActivity(intent);
+        System.out.println("[Android Controller: Attempting to call: " + number + "]");
+        return true; // Assume success for placeholder
+    }
+
+    public boolean openAppOrWeb(String target) {
+        // --- TODO: REPLACE WITH ACTUAL ANDROID INTENT TO LAUNCH APP/WEB ---
+        // Example: Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(target));
+        System.out.println("[Android Controller: Attempting to open: " + target + "]");
+        return true;
+    }
+
+    public boolean setSetting(String setting, String value) {
+        // --- TODO: REPLACE WITH ACTUAL ANDROID SETTINGS MODIFICATION INTENT/API ---
+        // Example: Setting brightness or volume (requires WRITE_SETTINGS permission)
+        System.out.println("[Android Controller: Attempting to set " + setting + " to " + value + "]");
+        return true;
+    }
+
+    // You would add methods here for camera, GPS, SMS, etc.
+}
+// -----------------------------------------------------------------------------
+
+
+class Brain {
+    private Map<String, String> memory = new LinkedHashMap<>();
+    private ScriptEngine engine;
+    private boolean online = false;
+    private Map<String, String> apiKeys = new HashMap<>();
+    private File memoryFile = new File("asa_and_andy_memory.txt");
+
+    // NEW FIELD: Reference to the Android-specific controller
+    private AndroidController controller; 
+
+    // Optional integrations - detected at runtime
+    private boolean hasSymja = false;
+    private boolean hasCommonsMath = false;
+
+    // Modified constructor to accept the Android controller
+    public Brain(AndroidController controller) {
+        this.controller = controller;
+        ScriptEngineManager mgr = new ScriptEngineManager();
+        engine = mgr.getEngineByName("JavaScript");
+        detectOptionalLibs();
+        loadMemory();
+    }
+
+    // ... (detectOptionalLibs, Memory, Expression evaluation, Root finding methods are unchanged and omitted for brevity) ...
+
+    public Brain() {
+        // Default constructor for testing/legacy, but an AndroidController should be passed
+        this(new AndroidController());
+    }
+
+    // --- Core Thinking Logic (Modified to include Android commands) ---
+    public String thinkOffline(String question) {
+        if (question == null) return "I need something to think about.";
+        String q = question.toLowerCase().trim();
+
+        // Memory recall
+        String recalled = recall(q);
+        if (recalled != null) return recalled + " (recalled)";
+
+        // NEW: Check for Android system control commands
+        if (q.startsWith("call:")) {
+            String number = question.substring(5).trim().replaceAll("[^0-9]", "");
+            if (number.length() > 0 && controller.makeCall(number)) {
+                return "Initiating call to " + number + ". (System Command)";
+            }
+        }
+        if (q.startsWith("open:")) {
+            String target = question.substring(5).trim();
+            if (controller.openAppOrWeb(target)) {
+                return "Opening " + target + ". (System Command)";
+            }
+        }
+        if (q.startsWith("set:")) {
+            String parts = question.substring(4).trim();
+            // Simple parsing: 'set: volume to 50'
+            int toIndex = parts.indexOf(" to ");
+            if (toIndex > 0) {
+                String setting = parts.substring(0, toIndex).trim();
+                String value = parts.substring(toIndex + 4).trim();
+                if (controller.setSetting(setting, value)) {
+                    return "Setting " + setting + " to " + value + ". (System Command)";
+                }
+            }
+        }
+
+
+        // explicit calc: prefix with calc: or compute:
+        if (q.startsWith("calc:") || q.startsWith("compute:")) {
+            String expr = question.substring(question.indexOf(":") + 1).trim();
+            String ans = evaluateExpression(expr);
+            learn(q, ans);
+            return ans;
+        }
+
+        // ... (Symbolic math and physics shortcuts are unchanged and omitted for brevity) ...
+
+        String fallback = "I can recall facts, solve numeric expressions, perform symbolic ops, find roots, and handle system commands (call, open, set). For deeper research, enable online mode.";
+        learn(q, fallback);
+        return fallback;
+    }
+
+    // ... (thinkOnline and HTTP helpers are unchanged and omitted for brevity) ...
+
+    public String evaluateExpression(String expr) {
+        if (expr == null) return null;
+        expr = expr.trim();
+        try {
+            // Using only JS fallback for simplicity in this conceptual modification
+            Object result = engine.eval(expr);
+            return String.valueOf(result);
+        } catch (ScriptException e) {
+            return "<could not evaluate expression: " + e.getMessage() + ">";
+        }
+    }
+}
+
+public class ASA {
+    private Brain brain;
+    private TTSInterface tts; // <-- CHANGED TYPE
+    public String voice = "Morgan Freeman";
+    public String humor = "Ryan Reynolds";
+
+    // Modified constructor to accept the TTS interface
+    public ASA(Brain shared, TTSInterface tts) {
+        this.brain = shared;
+        this.tts = tts;
+    }
+
+    // Default constructor for standalone use (requires placeholder)
+    public ASA() {
+        this.tts = new AndroidTTS();
+        this.brain = new Brain(new AndroidController());
+    }
+
+    public void setOnline(boolean on) { brain.setOnline(on); }
+    public void setApiKey(String service, String key) { brain.setApiKey(service, key); }
+
+    public void respond(String input) {
+        String thought = brain.thinkOnline(input);
+        
+        // Extract the base thought before any parenthetical notes
+        String cleanThought = thought.replaceAll(" \\(.*\\)", "");
+        
+        String styled = "[Calm Narration] " + capitalizeFirst(thought) + " ... as only " + voice + " would say.";
+        styled += " (with a touch of " + humor + " sarcasm)";
+
+        System.out.println("ASA: " + styled);
+        tts.speak(cleanThought); // Use the clean thought for speech
+
+        brain.learn(input.toLowerCase().trim(), styled);
+    }
+
+    private String capitalizeFirst(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return s.substring(0,1).toUpperCase() + s.substring(1);
+    }
+
+}
+
+public class ANDY {
+    private Brain brain;
+    private TTSInterface tts; // <-- CHANGED TYPE
+    public String voice = "Jim Carrey";
+    public String humor = "Samuel L Jackson";
+
+    // Modified constructor to accept the TTS interface
+    public ANDY(Brain shared, TTSInterface tts) {
+        this.brain = shared;
+        this.tts = tts;
+    }
+
+    // Default constructor for standalone use (requires placeholder)
+    public ANDY() {
+        this.tts = new AndroidTTS();
+        this.brain = new Brain(new AndroidController());
+    }
+
+    public void setOnline(boolean on) { brain.setOnline(on); }
+    public void setApiKey(String service, String key) { brain.setApiKey(service, key); }
+
+    public void respond(String input) {
+        String thought = brain.thinkOnline(input);
+        
+        // Extract the base thought before any parenthetical notes
+        String cleanThought = thought.replaceAll(" \\(.*\\)", "");
+
+        String styled = "WHOA! " + thought.toUpperCase() + "!!!";
+        styled += " (imagine " + voice + " shouting this)";
+        styled += " — and with " + humor + "’s no-nonsense punch!";
+
+        System.out.println("ANDY: " + styled);
+        tts.speak(cleanThought.toUpperCase()); // Use the clean thought for speech
+
+        brain.learn(input.toLowerCase().trim(), styled);
+    }
+}
